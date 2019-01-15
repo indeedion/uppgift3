@@ -1,0 +1,45 @@
+#!/bin/bash
+
+#check for arguemnts
+if [ "$#" -ne 1 ]; then
+    echo "USAGE: uppgift3alt <folder>"
+    exit 1
+fi
+
+#find last backupfile (if any)
+lastfile=$(ls -t backup* 2>/dev/null | cut -d $'\n' -f 1)
+
+
+#check if there already is a backup file
+if [ -f ./$lastfile ]; then
+   
+    #find last modification date in epoch time
+    lastdate=$(find ./$lastfile -printf '%p %Cs\n' | cut -d ' ' -f 2)
+    tarfile=$(echo $lastfile | sed 's/.gz//')
+
+    #extract tar.gz to tar
+    gunzip $lastfile
+
+    filenames=($(ls ./$1 | cut -d ' ' -f 1 | tr '\n' ' ' ))
+
+    #find what files are modified and delete them from tarfile
+    counter=0
+    for file in ${filenames[@]}; do
+	    
+	filedate=$(find ./$1/$file -printf '%p %Cs\n' | cut -d ' ' -f 2)
+	    
+	if [ $filedate -gt $lastdate ]; then
+	    tar -vf $tarfile --delete $1/$file 2>/dev/null
+	    (( counter++ ))
+	fi
+    done
+
+    #update tar file against folder on system
+    tar -uvf $tarfile $1/ &>/dev/null
+
+    #compress it again
+    gzip $tarfile
+
+else
+    tar -zcf "backup$(date +%F).tar.gz" $1
+fi

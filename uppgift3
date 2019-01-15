@@ -1,0 +1,57 @@
+#!/bin/bash
+
+#main program
+function main(){
+    
+    #find last modified backup file
+    lastfile=$(ls -t backup* 2>/dev/null | cut -d $'\n' -f 1)
+    
+    #check if there is any previous backup
+    if [ -f ./$lastfile ]; then
+
+	#find last backup file
+	bfile=$(ls -t backup* 2>/dev/null | cut -d $'\n' -f 1 )
+
+	#check last modification date in epoch time
+	bdate=$(find ./$bfile -printf '%p %Cs\n' | cut -d ' ' -f 2)
+		
+	#find files in folder
+	filenames=($(ls ./$1 | cut -d ' ' -f 1 | tr '\n' ' ' ))
+	
+	#find what files are modified
+	files_to_use=()
+	counter=0
+	for file in ${filenames[@]}; do
+	    
+	    filedate=$(find ./$1/$file -printf '%p %Cs\n' | cut -d ' ' -f 2)
+	    
+	    if [ $filedate -gt $bdate ]; then
+		files_to_use[$counter]=$file
+		(( counter++ ))
+	    fi
+	done
+	
+	#make backup with modified files
+	filestr=""
+	for file in ${files_to_use[@]}; do
+	    filestr="$filestr ./$1/$file"
+	done
+	
+	if [ -z $filestr ]; then
+	    echo "no changes to backup"
+	else
+	    tar -zcf ./backup$(date +%F.%s).tar.gz $filestr
+	fi
+    else
+	#no previous backup found, so just make one
+	tar -zcf backup$(date +%F.%s).tar.gz $1
+    fi
+}
+
+#check for amount of arguments
+if [ "$#" -ne 1 ]; then
+    echo "USAGE: uppgift3 </Path/to/folder>"
+else
+    #run program
+    main $1
+fi

@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#Last boot time and date vars
+normal_time=$(last boot | grep : | cut -d ' ' -f 6)
+
+# Computer name
+echo -n "Hostname: "
+hostname
+
+#IP
+echo -n "IP: "
+ip add | grep inet | grep brd | cut -d ' ' -f 6 | cut -d '/' -f 1
+
+#Distribution
+echo -n "Distribution: "
+cat /etc/os-release | grep ^NAME | cut -d '"' -f 2
+
+#Kernelversion
+echo -n "Kernel version: "
+uname -r
+
+#Last boot
+echo -n "Last boot: "
+echo "`cat /proc/uptime | cut -d ' ' -f 1` seconds ago"
+
+#Users logged in
+echo "Users logged in: "
+who | cut -d ' ' -f 1
