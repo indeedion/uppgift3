@@ -9,28 +9,29 @@ fi
 #find last backupfile (if any)
 lastfile=$(ls -t backup* 2>/dev/null | cut -d $'\n' -f 1)
 
-
 #check if there already is a backup file
 if [ -f ./$lastfile ]; then
    
     #find last modification date in epoch time
     lastdate=$(find ./$lastfile -printf '%p %Cs\n' | cut -d ' ' -f 2)
+
+    #name of tar after unzipping
     tarfile=$(echo $lastfile | sed 's/.gz//')
 
     #extract tar.gz to tar
     gunzip $lastfile
 
+    #find filenames in folder
     filenames=($(ls ./$1 | cut -d ' ' -f 1 | tr '\n' ' ' ))
 
     #find what files are modified and delete them from tarfile
-    counter=0
     for file in ${filenames[@]}; do
 	    
 	filedate=$(find ./$1/$file -printf '%p %Cs\n' | cut -d ' ' -f 2)
 	    
 	if [ $filedate -gt $lastdate ]; then
+	    
 	    tar -vf $tarfile --delete $1/$file 2>/dev/null
-	    (( counter++ ))
 	fi
     done
 
@@ -41,5 +42,6 @@ if [ -f ./$lastfile ]; then
     gzip $tarfile
 
 else
+    #just tar it
     tar -zcf "backup$(date +%F).tar.gz" $1
 fi
